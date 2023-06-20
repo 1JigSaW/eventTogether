@@ -46,6 +46,7 @@ class Event(models.Model):
     description = models.TextField(blank=True, null=True)
     date = models.DateTimeField()
     city = models.CharField(max_length=300)
+    place = models.TextField(blank=True, null=True)
     type = models.CharField(max_length=10, choices=EVENT_TYPES, default='EVENT')
     attendees = models.ManyToManyField('UserProfile', related_name='favorite_events', blank=True)
     awaiting_invite = models.ManyToManyField('UserProfile', related_name='events_awaiting_invite', blank=True)
