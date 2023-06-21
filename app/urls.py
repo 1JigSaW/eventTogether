@@ -14,10 +14,11 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 #     urlpatterns += staticfiles_urlpatterns()
 
 from django.urls import path
-from .views import UserRegisterView
+from .views import UserRegisterView, UserAuthView
 
 urlpatterns = [
     path('register/', UserRegisterView.as_view()),
+    path('login/', UserAuthView.as_view()),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

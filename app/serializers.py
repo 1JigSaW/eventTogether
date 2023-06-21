@@ -1,8 +1,16 @@
 from rest_framework import serializers
-from .models import *
+from django.contrib.auth.models import User
+from rest_framework.validators import UniqueValidator
+
+from app.models import Event
 
 
 class UserSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(
+        required=True,
+        validators=[UniqueValidator(queryset=User.objects.all(),  message="This email is already in use.")]
+    )
+
     class Meta:
         model = User
         fields = ('username', 'email', 'password')
