@@ -18,7 +18,7 @@ from .views import UserRegisterView, UserAuthView
 
 urlpatterns = [
     path('register/', UserRegisterView.as_view()),
-    path('login/', UserAuthView.as_view()),
+    path('auth/', UserAuthView.as_view()),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

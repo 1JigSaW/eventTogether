@@ -1,9 +1,20 @@
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import UserSerializer
+
+
+def authenticate(request, email=None, password=None):
+    User = get_user_model()
+    try:
+        user = User.objects.get(email=email)
+        if check_password(password, user.password):
+            return user
+    except User.DoesNotExist:
+        return None
 
 
 class UserRegisterView(APIView):
@@ -25,5 +36,4 @@ class UserAuthView(APIView):
         if user is not None:
             return Response({'message': 'Authentication successful'}, status=status.HTTP_200_OK)
         else:
-            return Response({'message': 'Authentication failed'}, status=status.HTTP_401_UNAUTHORIZED)
-
+            return Response({'message': 'Check your password or email'}, status=status.HTTP_401_UNAUTHORIZED)
