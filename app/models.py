@@ -66,3 +66,11 @@ class Message(models.Model):
 
     def __str__(self):
         return f'Message from {self.sender} to {self.receiver}'
+
+
+class UserFavourite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    favourite_event = models.ForeignKey(Event, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('user', 'favourite_event')

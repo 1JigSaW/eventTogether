@@ -14,12 +14,14 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 #     urlpatterns += staticfiles_urlpatterns()
 
 from django.urls import path
-from .views import UserRegisterView, UserAuthView, EventViewSet
+from .views import UserRegisterView, UserAuthView, EventViewSet, GetUserFavouritesView, AddUserFavouriteView
 
 urlpatterns = [
     path('register/', UserRegisterView.as_view()),
     path('auth/', UserAuthView.as_view()),
     path('events/', EventViewSet.as_view({'get': 'list'})),
+    path('favourites/', GetUserFavouritesView.as_view()),
+    path('favourites/add/', AddUserFavouriteView.as_view()),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
