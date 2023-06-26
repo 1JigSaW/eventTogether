@@ -1,10 +1,13 @@
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from .serializers import UserSerializer
+from rest_framework import status, viewsets
+
+from .models import Event
+from .serializers import UserSerializer, EventSerializer
 
 
 def authenticate(request, email=None, password=None):
@@ -37,3 +40,13 @@ class UserAuthView(APIView):
             return Response({'message': 'Authentication successful'}, status=status.HTTP_200_OK)
         else:
             return Response({'message': 'Check your password or email'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class TenPerPagePagination(PageNumberPagination):
+    page_size = 10
+
+
+class EventViewSet(viewsets.ModelViewSet):
+    queryset = Event.objects.all().order_by('date')
+    serializer_class = EventSerializer
+    pagination_class = TenPerPagePagination
