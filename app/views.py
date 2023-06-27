@@ -82,3 +82,13 @@ class GetUserFavouritesView(APIView):
         favourites = UserFavourite.objects.filter(user=user)
         serializer = UserFavouriteSerializer(favourites, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class GetEventView(APIView):
+    def get(self, request, event_id, format=None):
+        try:
+            event = Event.objects.get(pk=event_id)
+            serializer = EventSerializer(event)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Event.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)

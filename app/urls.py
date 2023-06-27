@@ -15,12 +15,13 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 from django.urls import path
 from .views import UserRegisterView, UserAuthView, EventViewSet, GetUserFavouritesView, AddUserFavouriteView, \
-    RemoveUserFavouriteView
+    RemoveUserFavouriteView, GetEventView
 
 urlpatterns = [
     path('register/', UserRegisterView.as_view()),
     path('auth/', UserAuthView.as_view()),
     path('events/', EventViewSet.as_view({'get': 'list'})),
+    path('events/<int:event_id>/', GetEventView.as_view()),
     path('favourites/<int:user_id>/', GetUserFavouritesView.as_view()),
     path('favourites/add/', AddUserFavouriteView.as_view()),
     path('favourites/remove/', RemoveUserFavouriteView.as_view()),
