@@ -37,7 +37,7 @@ class UserAuthView(APIView):
         user = authenticate(request, email=email, password=password)
 
         if user is not None:
-            return Response({'message': 'Authentication successful'}, status=status.HTTP_200_OK)
+            return Response({'message': 'User authenticated', 'userId': user.id}, status=status.HTTP_200_OK)
         else:
             return Response({'message': 'Check your password or email'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -54,16 +54,31 @@ class EventViewSet(viewsets.ModelViewSet):
 
 class AddUserFavouriteView(APIView):
     def post(self, request, format=None):
+        print(request.data)
         serializer = UserFavouriteSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class RemoveUserFavouriteView(APIView):
+    def delete(self, request, format=None):
+        user = request.data.get('user')
+        favourite_event = request.data.get('favourite_event')
+
+        try:
+            favourite = UserFavourite.objects.get(user=user, favourite_event=favourite_event)
+            favourite.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except UserFavourite.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+
 class GetUserFavouritesView(APIView):
-    def get(self, request, format=None):
-        user = request.user
+    def get(self, request, user_id, format=None):
+        user = User.objects.get(pk=user_id)
         favourites = UserFavourite.objects.filter(user=user)
         serializer = UserFavouriteSerializer(favourites, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

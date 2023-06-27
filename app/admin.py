@@ -1,3 +1,9 @@
 from django.contrib import admin
 
-# Register your models here.
+from app.models import UserProfile, Interest, Event, Message, UserFavourite
+
+admin.site.register(UserProfile)
+admin.site.register(Interest)
+admin.site.register(Event)
+admin.site.register(Message)
+admin.site.register(UserFavourite)

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
 
-from app.models import Event
+from app.models import Event, UserFavourite
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -29,5 +29,5 @@ class EventSerializer(serializers.ModelSerializer):
 
 class UserFavouriteSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Event
+        model = UserFavourite
         fields = '__all__'
