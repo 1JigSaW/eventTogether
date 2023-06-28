@@ -6,8 +6,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 
-from .models import Event, UserFavourite
-from .serializers import UserSerializer, EventSerializer, UserFavouriteSerializer
+from .models import Event, UserFavourite, Interest, Language
+from .serializers import UserSerializer, EventSerializer, UserFavouriteSerializer, InterestSerializer, \
+    LanguageSerializer
 
 
 def authenticate(request, email=None, password=None):
@@ -92,3 +93,19 @@ class GetEventView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Event.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+class InterestSearchView(APIView):
+    def get(self, request, format=None):
+        query = request.GET.get('query', '')
+        interests = Interest.objects.filter(title__icontains=query)[:5]  # limiting results to 5
+        serializer = InterestSerializer(interests, many=True)
+        return Response(serializer.data)
+
+
+class LanguageSearchView(APIView):
+    def get(self, request, format=None):
+        query = request.GET.get('query', '')
+        languages = Language.objects.filter(name__icontains=query)[:5]  # limiting results to 5
+        serializer = LanguageSerializer(languages, many=True)
+        return Response(serializer.data)

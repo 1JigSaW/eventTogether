@@ -2,13 +2,13 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
 
-from app.models import Event, UserFavourite
+from app.models import Event, UserFavourite, Interest, Language
 
 
 class UserSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         required=True,
-        validators=[UniqueValidator(queryset=User.objects.all(),  message="This email is already in use.")]
+        validators=[UniqueValidator(queryset=User.objects.all(), message="This email is already in use.")]
     )
 
     class Meta:
@@ -30,4 +30,16 @@ class EventSerializer(serializers.ModelSerializer):
 class UserFavouriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserFavourite
+        fields = '__all__'
+
+
+class InterestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Interest
+        fields = '__all__'
+
+
+class LanguageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Language
         fields = '__all__'

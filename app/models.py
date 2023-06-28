@@ -1,3 +1,4 @@
+import pycountry
 from django.db import models
 from django.contrib.auth.models import User
 from django_countries.fields import CountryField
@@ -13,7 +14,7 @@ class UserProfile(models.Model):
     first_name = models.CharField(max_length=300)
     last_name = models.CharField(max_length=300)
     age = models.PositiveIntegerField(null=True, blank=True)
-    language = CountryField(blank=True, null=True)
+    language = models.ManyToManyField('Language', blank=True)
     interests = models.ManyToManyField('Interest', related_name='interests')
     description = models.TextField(blank=True, null=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True)
@@ -30,6 +31,14 @@ class Interest(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Language(models.Model):
+    code = models.CharField(max_length=3, unique=True)
+    name = models.CharField(max_length=200, unique=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Event(models.Model):
