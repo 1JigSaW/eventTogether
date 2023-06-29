@@ -27,10 +27,10 @@ class UserProfile(models.Model):
 
 
 class Interest(models.Model):
-    title = models.CharField(max_length=300)
+    name = models.CharField(max_length=300)
 
     def __str__(self):
-        return self.title
+        return self.name
 
 
 class Language(models.Model):

@@ -98,7 +98,7 @@ class GetEventView(APIView):
 class InterestSearchView(APIView):
     def get(self, request, format=None):
         query = request.GET.get('query', '')
-        interests = Interest.objects.filter(title__icontains=query)[:5]  # limiting results to 5
+        interests = Interest.objects.filter(name__icontains=query)[:5]  # limiting results to 5
         serializer = InterestSerializer(interests, many=True)
         return Response(serializer.data)
 
