@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, get_user_model, update_session_auth_hash
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
+from django.http import Http404
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -117,11 +118,13 @@ class UserProfileUpdateView(APIView):
             user_profile = UserProfile.objects.get(user_id=user_id)
             serializer = UserProfileSerializer(user_profile, data=request.data, partial=True)
         except UserProfile.DoesNotExist:
-            serializer = UserProfileSerializer(data=request.data)
+            user_profile = UserProfile(user_id=user_id)
+            serializer = UserProfileSerializer(user_profile, data=request.data)
 
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({"user_profile_id": user_profile.id, "data": serializer.data}, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -150,3 +153,37 @@ class ChangePasswordView(APIView):
             return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Wrong old password"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AddUserToEventView(APIView):
+    def post(self, request, event_id, format=None):
+        try:
+            event = Event.objects.get(id=event_id)
+            user_profile = UserProfile.objects.get(user_id=request.data.get('user_id'))
+        except (Event.DoesNotExist, UserProfile.DoesNotExist):
+            raise Http404
+
+        # Add the user to the event's awaiting_invite list
+        event.awaiting_invite.add(user_profile)
+        event.save()
+
+        return Response({"message": "User successfully added to the event's awaiting list"}, status=status.HTTP_200_OK)
+
+
+class RemoveUserFromEventView(APIView):
+    def delete(self, request, event_id, user_id, format=None):
+        try:
+            event = Event.objects.get(id=event_id)
+            user_profile = UserProfile.objects.get(user_id=user_id)
+
+            if user_profile in event.awaiting_invite.all():
+                event.awaiting_invite.remove(user_profile)
+                event.save()
+                return Response({"message": "User removed from event"}, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "User not found in the event"}, status=status.HTTP_404_NOT_FOUND)
+
+        except Event.DoesNotExist:
+            return Response({"error": "Event not found"}, status=status.HTTP_404_NOT_FOUND)
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
