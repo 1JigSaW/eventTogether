@@ -13,14 +13,14 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=300)
     last_name = models.CharField(max_length=300)
-    age = models.PositiveIntegerField(null=True, blank=True)
-    language = models.ManyToManyField('Language', blank=True)
+    age = models.PositiveIntegerField()
+    language = models.ManyToManyField('Language')
     interests = models.ManyToManyField('Interest', related_name='interests')
     description = models.TextField(blank=True, null=True)
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True)
     organizer_event = models.ForeignKey('Event', related_name='organizer_events', on_delete=models.CASCADE, null=True,
                                         blank=True)
-    events = models.ManyToManyField('Event', related_name='events')
+    events = models.ManyToManyField('Event', related_name='events', blank=True, null=True)
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'

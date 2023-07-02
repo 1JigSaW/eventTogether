@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
 
-from app.models import Event, UserFavourite, Interest, Language
+from app.models import Event, UserFavourite, Interest, Language, UserProfile
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -43,3 +43,22 @@ class LanguageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Language
         fields = '__all__'
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    interests = serializers.SlugRelatedField(
+        many=True,
+        queryset=Interest.objects.all(),
+        slug_field='name'
+    )
+    language = serializers.SlugRelatedField(
+        many=True,
+        queryset=Language.objects.all(),
+        slug_field='name'
+    )
+
+    class Meta:
+        model = UserProfile
+        fields = ['user', 'first_name', 'last_name', 'age', 'language', 'interests', 'description']
+
+

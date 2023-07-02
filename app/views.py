@@ -1,17 +1,17 @@
-from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth import authenticate, get_user_model, update_session_auth_hash
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, permissions
 
-from .models import Event, UserFavourite, Interest, Language
+from .models import Event, UserFavourite, Interest, Language, UserProfile
 from .serializers import UserSerializer, EventSerializer, UserFavouriteSerializer, InterestSerializer, \
-    LanguageSerializer
+    LanguageSerializer, UserProfileSerializer
 
 
-def authenticate(request, email=None, password=None):
+def authenticateAuth(request, email=None, password=None):
     User = get_user_model()
     try:
         user = User.objects.get(email=email)
@@ -35,7 +35,7 @@ class UserAuthView(APIView):
         email = request.data.get('email')
         password = request.data.get('password')
 
-        user = authenticate(request, email=email, password=password)
+        user = authenticateAuth(request, email=email, password=password)
 
         if user is not None:
             return Response({'message': 'User authenticated', 'userId': user.id}, status=status.HTTP_200_OK)
@@ -109,3 +109,44 @@ class LanguageSearchView(APIView):
         languages = Language.objects.filter(name__icontains=query)[:5]  # limiting results to 5
         serializer = LanguageSerializer(languages, many=True)
         return Response(serializer.data)
+
+
+class UserProfileUpdateView(APIView):
+    def put(self, request, user_id, format=None):
+        try:
+            user_profile = UserProfile.objects.get(user_id=user_id)
+            serializer = UserProfileSerializer(user_profile, data=request.data, partial=True)
+        except UserProfile.DoesNotExist:
+            serializer = UserProfileSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserProfileDetailView(APIView):
+    def get(self, request, user_id, format=None):
+        try:
+            user_profile = UserProfile.objects.get(user_id=user_id)
+            serializer = UserProfileSerializer(user_profile)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User profile not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ChangePasswordView(APIView):
+
+    def post(self, request, format=None):
+        old_password = request.data.get('old_password', None)
+        new_password = request.data.get('new_password', None)
+        user = request.data.get('user', None)
+        user = User.objects.get(id=user)
+
+        if authenticate(username=user.username, password=old_password):
+            user.set_password(new_password)
+            user.save()
+            update_session_auth_hash(request, user)
+            return Response({"message": "Password updated successfully"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Wrong old password"}, status=status.HTTP_400_BAD_REQUEST)
