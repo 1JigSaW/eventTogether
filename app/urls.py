@@ -16,7 +16,7 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import path
 from .views import UserRegisterView, UserAuthView, EventViewSet, GetUserFavouritesView, AddUserFavouriteView, \
     RemoveUserFavouriteView, GetEventView, InterestSearchView, LanguageSearchView, UserProfileUpdateView, \
-    UserProfileDetailView, ChangePasswordView, AddUserToEventView, RemoveUserFromEventView
+    UserProfileDetailView, ChangePasswordView, AddUserToEventView, RemoveUserFromEventView, SearchEventView
 
 urlpatterns = [
     path('register/', UserRegisterView.as_view()),
@@ -33,6 +33,7 @@ urlpatterns = [
     path('change-password/', ChangePasswordView.as_view()),
     path('events/<int:event_id>/add_user/', AddUserToEventView.as_view()),
     path('remove-user-from-event/<int:event_id>/<int:user_id>/', RemoveUserFromEventView.as_view()),
+    path('events/search/', SearchEventView.as_view()),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

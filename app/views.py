@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, get_user_model, update_session_auth_hash
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
+from django.db.models import Q
 from django.http import Http404
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
@@ -187,3 +188,28 @@ class RemoveUserFromEventView(APIView):
             return Response({"error": "Event not found"}, status=status.HTTP_404_NOT_FOUND)
         except UserProfile.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class SearchEventView(APIView):
+    def get(self, request, format=None):
+        search_query = request.query_params.get('query', None)
+        print(f"Received search query: {search_query}")
+
+        if search_query is None:
+            print("No search query provided")
+            return Response({"error": "No search query provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        matching_events = Event.objects.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(city__icontains=search_query) |
+            Q(place__icontains=search_query)
+        )
+
+        if not matching_events:
+            print(f"No events found matching the search query: {search_query}")
+            return Response({"message": "No events found matching the search query"}, status=status.HTTP_200_OK)
+
+        serializer = EventSerializer(matching_events, many=True)
+        print(f"Serialized data: {serializer.data}")
+        return Response(serializer.data, status=status.HTTP_200_OK)
