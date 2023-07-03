@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, get_user_model, update_session_auth_hash
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from django.http import Http404
 from rest_framework.pagination import PageNumberPagination
@@ -213,3 +214,24 @@ class SearchEventView(APIView):
         serializer = EventSerializer(matching_events, many=True)
         print(f"Serialized data: {serializer.data}")
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class EventProfilesView(APIView):
+    def get(self, request, event_id, format=None):
+        try:
+            event = Event.objects.get(id=event_id)
+        except ObjectDoesNotExist:
+            return Response({"error": "Event not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        profiles = UserProfile.objects.filter(events_awaiting_invite=event)
+
+        # Create a pagination object.
+        paginator = PageNumberPagination()
+        paginator.page_size = 10  # Set the number of items per page.
+
+        # Apply the pagination to the queryset.
+        page = paginator.paginate_queryset(profiles, request)
+
+        serializer = UserProfileSerializer(page, many=True)
+
+        return paginator.get_paginated_response(serializer.data)

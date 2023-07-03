@@ -34,6 +34,7 @@ urlpatterns = [
     path('events/<int:event_id>/add_user/', AddUserToEventView.as_view()),
     path('remove-user-from-event/<int:event_id>/<int:user_id>/', RemoveUserFromEventView.as_view()),
     path('events/search/', SearchEventView.as_view()),
+    path('event_profiles/<int:event_id>/', views.EventProfilesView.as_view()),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
