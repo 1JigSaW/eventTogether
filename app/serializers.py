@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
 
-from app.models import Event, UserFavourite, Interest, Language, UserProfile
+from app.models import Event, UserFavourite, Interest, Language, UserProfile, Message
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -62,4 +62,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'first_name', 'last_name', 'age', 'language', 'interests', 'description']
 
 
+class MessageSerializer(serializers.ModelSerializer):
+    sender = serializers.SlugRelatedField(slug_field='id', queryset=UserProfile.objects.all())
+    receiver = serializers.SlugRelatedField(slug_field='id', queryset=UserProfile.objects.all())
+
+    class Meta:
+        model = Message
+        fields = ('id', 'event', 'sender', 'receiver', 'content', 'timestamp')
 
