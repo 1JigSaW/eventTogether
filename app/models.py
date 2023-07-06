@@ -66,15 +66,23 @@ class Event(models.Model):
         return self.title
 
 
+class Chat(models.Model):
+    event = models.ForeignKey(Event, related_name='chats', on_delete=models.CASCADE)
+    user1 = models.ForeignKey(UserProfile, related_name='chats_as_user1', on_delete=models.CASCADE)
+    user2 = models.ForeignKey(UserProfile, related_name='chats_as_user2', on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('event', 'user1', 'user2')
+
+
 class Message(models.Model):
-    event = models.ForeignKey('Event', related_name='event', on_delete=models.CASCADE)
-    sender = models.ForeignKey('UserProfile', related_name='sent_messages', on_delete=models.CASCADE)
-    receiver = models.ForeignKey('UserProfile', related_name='received_messages', on_delete=models.CASCADE)
+    chat = models.ForeignKey(Chat, related_name='messages', on_delete=models.CASCADE)
+    sender = models.ForeignKey(UserProfile, related_name='sent_messages', on_delete=models.CASCADE)
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'Message from {self.sender} to {self.receiver}'
+        return f'Message from {self.sender} to {self.chat.user1 if self.sender != self.chat.user1 else self.chat.user2}'
 
 
 class UserFavourite(models.Model):

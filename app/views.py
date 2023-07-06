@@ -9,9 +9,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets, permissions
 
-from .models import Event, UserFavourite, Interest, Language, UserProfile, Message
+from .models import Event, UserFavourite, Interest, Language, UserProfile, Message, Chat
 from .serializers import UserSerializer, EventSerializer, UserFavouriteSerializer, InterestSerializer, \
-    LanguageSerializer, UserProfileSerializer, MessageSerializer
+    LanguageSerializer, UserProfileSerializer, MessageSerializer, WriteMessageSerializer, ChatSerializer
 
 
 def authenticateAuth(request, email=None, password=None):
@@ -237,35 +237,64 @@ class EventProfilesView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
 
-class EventChatView(APIView):
-    def get(self, request, event_id, format=None):
+class ChatMessagesView(APIView):
+    def get(self, request, chat_id, format=None):
         try:
-            event = Event.objects.get(pk=event_id)
-            messages = Message.objects.filter(event=event).order_by('timestamp')
+            messages = Message.objects.filter(chat_id=chat_id).order_by('timestamp')
             serializer = MessageSerializer(messages, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except Event.DoesNotExist:
-            print(event_id)
+        except Message.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+class UserChatsView(APIView):
+    def get(self, request, user_id, format=None):
+        try:
+            user = UserProfile.objects.get(id=user_id)
+            chats = Chat.objects.filter(Q(user1=user) | Q(user2=user))  # get all chats related to the user
+
+            result = []
+            for chat in chats:
+                message = Message.objects.filter(chat=chat).latest('timestamp')  # get latest message for the chat
+                result.append(message)
+
+            serializer = MessageSerializer(result, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except UserProfile.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
 
 class SendMessageView(APIView):
     def post(self, request, format=None):
-        serializer = MessageSerializer(data=request.data)
-        print(request.data)
+        serializer = WriteMessageSerializer(data=request.data)
         if serializer.is_valid():
-            user_profile = UserProfile.objects.get(id=request.data['sender'])
-            serializer.save(sender=user_profile)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserMessagesView(APIView):
-    def get(self, request, user_id, format=None):
-        try:
-            user = UserProfile.objects.get(id=user_id)
-            messages = Message.objects.filter(receiver=user).order_by('timestamp')
-            serializer = MessageSerializer(messages, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except UserProfile.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+class CreateChatView(APIView):
+    def post(self, request, format=None):
+        recipient_id = request.data.get('recipientUserId')
+        if recipient_id:
+            user_profile = UserProfile.objects.get(id=request.user.id)
+            recipient = UserProfile.objects.get(id=recipient_id)
+
+            # Check if chat already exists
+            existing_chat = Chat.objects.filter(
+                Q(user1=user_profile, user2=recipient) |
+                Q(user1=recipient, user2=user_profile)
+            ).first()
+
+            if existing_chat:
+                # If chat already exists, return it
+                serializer = ChatSerializer(existing_chat)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                # If not, create new chat
+                new_chat = Chat.objects.create(user1=user_profile, user2=recipient)
+                serializer = ChatSerializer(new_chat)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
 
-from app.models import Event, UserFavourite, Interest, Language, UserProfile, Message
+from app.models import Event, UserFavourite, Interest, Language, UserProfile, Message, Chat
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -62,11 +62,33 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'first_name', 'last_name', 'age', 'language', 'interests', 'description']
 
 
+class ChatSerializer(serializers.ModelSerializer):
+    event = EventSerializer(read_only=True)
+
+    class Meta:
+        model = Chat
+        fields = '__all__'
+
+
 class MessageSerializer(serializers.ModelSerializer):
-    sender = serializers.SlugRelatedField(slug_field='id', queryset=UserProfile.objects.all())
-    receiver = serializers.SlugRelatedField(slug_field='id', queryset=UserProfile.objects.all())
+    sender = UserProfileSerializer(read_only=True)
+    chat = ChatSerializer(read_only=True)
 
     class Meta:
         model = Message
-        fields = ('id', 'event', 'sender', 'receiver', 'content', 'timestamp')
+        fields = ['id', 'content', 'timestamp', 'sender', 'chat']
 
+
+class WriteMessageSerializer(serializers.ModelSerializer):
+    sender = serializers.PrimaryKeyRelatedField(queryset=UserProfile.objects.all())
+    chat = serializers.PrimaryKeyRelatedField(queryset=Chat.objects.all())
+
+    class Meta:
+        model = Message
+        fields = ['id', 'content', 'timestamp', 'sender', 'chat']
+
+    def create(self, validated_data):
+        sender = validated_data.pop('sender')
+        chat = validated_data.pop('chat')
+        message = Message.objects.create(sender=sender, chat=chat, **validated_data)
+        return message
