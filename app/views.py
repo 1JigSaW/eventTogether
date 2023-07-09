@@ -315,6 +315,7 @@ class GetChatIDView(APIView):
                 Q(user1__id=sender_id, user2__id=recipient_id, event__id=event_id) |
                 Q(user1__id=recipient_id, user2__id=sender_id, event__id=event_id)
             )
+            print(chat.id)
             return JsonResponse({"chat_id": chat.id})
         except ObjectDoesNotExist:
             return JsonResponse({"error": "Chat not found"}, status=404)
