@@ -3,7 +3,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -275,26 +275,46 @@ class SendMessageView(APIView):
 
 class CreateChatView(APIView):
     def post(self, request, format=None):
+        print(request.data)
         recipient_id = request.data.get('recipientUserId')
-        if recipient_id:
-            user_profile = UserProfile.objects.get(id=request.user.id)
+        sender_id = request.data.get('senderUserId')
+        event_id = request.data.get('eventId')
+        if recipient_id and sender_id and event_id:
+            user_profile = UserProfile.objects.get(id=sender_id)
             recipient = UserProfile.objects.get(id=recipient_id)
+            event = Event.objects.get(id=event_id)
 
-            # Check if chat already exists
+            # Check if chat already exists for the specific event
             existing_chat = Chat.objects.filter(
-                Q(user1=user_profile, user2=recipient) |
-                Q(user1=recipient, user2=user_profile)
+                Q(user1=user_profile, user2=recipient, event=event) |
+                Q(user1=recipient, user2=user_profile, event=event)
             ).first()
 
             if existing_chat:
-                # If chat already exists, return it
-                serializer = ChatSerializer(existing_chat)
+                # If chat already exists, return messages in it
+                messages = Message.objects.filter(chat=existing_chat)
+                serializer = MessageSerializer(messages, many=True)
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
-                # If not, create new chat
-                new_chat = Chat.objects.create(user1=user_profile, user2=recipient)
+                # If not, create new chat for the event
+                new_chat = Chat.objects.create(user1=user_profile, user2=recipient, event=event)
                 serializer = ChatSerializer(new_chat)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             return Response({"error": "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
 
+
+class GetChatIDView(APIView):
+    def get(self, request, format=None):
+        recipient_id = request.GET.get('recipientUserId')
+        sender_id = request.GET.get('senderUserId')
+        event_id = request.GET.get('eventId')
+
+        try:
+            chat = Chat.objects.get(
+                Q(user1__id=sender_id, user2__id=recipient_id, event__id=event_id) |
+                Q(user1__id=recipient_id, user2__id=sender_id, event__id=event_id)
+            )
+            return JsonResponse({"chat_id": chat.id})
+        except ObjectDoesNotExist:
+            return JsonResponse({"error": "Chat not found"}, status=404)

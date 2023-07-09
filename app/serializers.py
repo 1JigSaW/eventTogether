@@ -64,10 +64,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class ChatSerializer(serializers.ModelSerializer):
     event = EventSerializer(read_only=True)
+    user1 = UserProfileSerializer(read_only=True)
+    user2 = UserProfileSerializer(read_only=True)
 
     class Meta:
         model = Chat
-        fields = '__all__'
+        fields = ['id', 'event', 'user1', 'user2']
 
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -92,3 +94,6 @@ class WriteMessageSerializer(serializers.ModelSerializer):
         chat = validated_data.pop('chat')
         message = Message.objects.create(sender=sender, chat=chat, **validated_data)
         return message
+
+
+1
