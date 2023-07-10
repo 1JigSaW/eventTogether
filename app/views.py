@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate, get_user_model, update_session_aut
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import Http404, JsonResponse
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
@@ -319,3 +319,21 @@ class GetChatIDView(APIView):
             return JsonResponse({"chat_id": chat.id})
         except ObjectDoesNotExist:
             return JsonResponse({"error": "Chat not found"}, status=404)
+
+
+class MatchUserView(APIView):
+    def get(self, request, user_id, event_id, *args, **kwargs):
+        user = UserProfile.objects.get(id=user_id)
+        event = Event.objects.get(id=event_id)
+
+        same_language_users = UserProfile.objects.filter(language__in=user.language.all(), events_awaiting_invite=event)
+        same_age_users = same_language_users.filter(age=user.age)
+
+        same_interests_users = same_age_users.filter(interests__in=user.interests.all()).annotate(
+            shared_interests=Count('interests')).order_by('-shared_interests')
+
+        # Serialize all user profiles instead of just one
+        serializer = UserProfileSerializer(same_interests_users, many=True)
+
+        return Response(serializer.data)
+
