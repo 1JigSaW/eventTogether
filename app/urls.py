@@ -41,7 +41,7 @@ urlpatterns = [
     path('chat/create/', CreateChatView.as_view(), name='create_chat'),
     path('message/create/', views.SendMessageView.as_view()),
     path('get_chat_id/', GetChatIDView.as_view(), name='get_chat_id'),
-    path('match-users/<int:user_id>/<int:event_id>/<int:position>/', MatchUserView.as_view(), name='match-user'),
+    path('match-users/<int:user_id>/<int:event_id>/', MatchUserView.as_view(), name='match-user'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate, get_user_model, update_session_aut
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q, Count
+from django.db.models import Q, Count, F
 from django.http import Http404, JsonResponse
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
@@ -326,14 +326,22 @@ class MatchUserView(APIView):
         user = UserProfile.objects.get(id=user_id)
         event = Event.objects.get(id=event_id)
 
-        same_language_users = UserProfile.objects.filter(language__in=user.language.all(), events_awaiting_invite=event)
-        same_age_users = same_language_users.filter(age=user.age)
+        # Получаем всех пользователей, подписанных на событие
+        event_users = UserProfile.objects.filter(events_awaiting_invite=event).exclude(id=user_id)
 
-        same_interests_users = same_age_users.filter(interests__in=user.interests.all()).annotate(
-            shared_interests=Count('interests')).order_by('-shared_interests')
+        # Считаем количество совпадающих языков и интересов
+        matched_users = event_users.annotate(
+            language_matches=Count('language', filter=Q(language__in=user.language.all())),
+            interest_matches=Count('interests', filter=Q(interests__in=user.interests.all())),
+        )
 
-        # Serialize all user profiles instead of just one
-        serializer = UserProfileSerializer(same_interests_users, many=True)
+        # Считаем общее количество совпадений и сортируем пользователей по этому параметру
+        matched_users = matched_users.annotate(
+            total_matches= F('language_matches') + F('interest_matches')
+        ).order_by('-total_matches')
 
+        serializer = UserProfileSerializer(matched_users, many=True)
+        print(serializer.data)
         return Response(serializer.data)
+
 
