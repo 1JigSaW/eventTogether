@@ -1,7 +1,11 @@
+import base64
+
+from cloudinary.uploader import upload
 from django.contrib.auth import authenticate, get_user_model, update_session_auth_hash
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.base import ContentFile
 from django.db.models import Q, Count, F
 from django.http import Http404, JsonResponse
 from rest_framework.pagination import PageNumberPagination
@@ -326,16 +330,13 @@ class MatchUserView(APIView):
         user = UserProfile.objects.get(id=user_id)
         event = Event.objects.get(id=event_id)
 
-        # Получаем всех пользователей, подписанных на событие
         event_users = UserProfile.objects.filter(events_awaiting_invite=event).exclude(id=user_id)
 
-        # Считаем количество совпадающих языков и интересов
         matched_users = event_users.annotate(
             language_matches=Count('language', filter=Q(language__in=user.language.all())),
             interest_matches=Count('interests', filter=Q(interests__in=user.interests.all())),
         )
 
-        # Считаем общее количество совпадений и сортируем пользователей по этому параметру
         matched_users = matched_users.annotate(
             total_matches= F('language_matches') + F('interest_matches')
         ).order_by('-total_matches')
@@ -344,4 +345,26 @@ class MatchUserView(APIView):
         print(serializer.data)
         return Response(serializer.data)
 
+
+class UserProfilePictureUpdateView(APIView):
+
+    def put(self, request, *args, **kwargs):
+        profile_id = kwargs.get('profile_id')
+        try:
+            profile = UserProfile.objects.get(user_id=profile_id)
+        except UserProfile.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        image_data = base64.b64decode(request.data['picture'])
+        image_file = ContentFile(image_data, str(profile.user.id) + '.jpg')
+
+        # Use the Cloudinary upload function to upload the image
+        # This function will return a dictionary that includes the URL of the uploaded image
+        upload_result = upload(image_file, folder='users')
+
+        # Get the URL from the result and save it to the model
+        profile.image = upload_result['url']
+        profile.save()
+
+        return Response(status=status.HTTP_200_OK)
 

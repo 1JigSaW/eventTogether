@@ -1,7 +1,6 @@
-import pycountry
 from django.db import models
 from django.contrib.auth.models import User
-from django_countries.fields import CountryField
+from cloudinary.models import CloudinaryField
 
 
 class UserProfile(models.Model):
@@ -10,6 +9,7 @@ class UserProfile(models.Model):
         ('F', 'Female'),
         ('NB', 'Non-Binary'),
     ]
+    image = CloudinaryField('users', folder='users/', blank=True, null=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=300)
     last_name = models.CharField(max_length=300)
@@ -20,7 +20,7 @@ class UserProfile(models.Model):
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True)
     organizer_event = models.ForeignKey('Event', related_name='organizer_events', on_delete=models.CASCADE, null=True,
                                         blank=True)
-    events = models.ManyToManyField('Event', related_name='events', blank=True, null=True)
+    events = models.ManyToManyField('Event', related_name='events', blank=True)
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
@@ -51,6 +51,7 @@ class Event(models.Model):
         ('PARTY', 'Party'),
         ('EVENT', 'Event'),
     ]
+    image = CloudinaryField('events', folder='events/', blank=True, null=True)
     title = models.CharField(max_length=300)
     description = models.TextField(blank=True, null=True)
     date = models.DateTimeField()
