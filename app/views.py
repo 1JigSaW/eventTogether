@@ -12,6 +12,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets, permissions
+from django.utils import timezone
 
 from .models import Event, UserFavourite, Interest, Language, UserProfile, Message, Chat
 from .serializers import UserSerializer, EventSerializer, UserFavouriteSerializer, InterestSerializer, \
@@ -55,7 +56,7 @@ class TenPerPagePagination(PageNumberPagination):
 
 
 class EventViewSet(viewsets.ModelViewSet):
-    queryset = Event.objects.all().order_by('date')
+    queryset = Event.objects.filter(date__gte=timezone.now()).order_by('date')
     serializer_class = EventSerializer
     pagination_class = TenPerPagePagination
 
