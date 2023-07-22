@@ -210,7 +210,7 @@ class SearchEventView(APIView):
             Q(description__icontains=search_query) |
             Q(city__icontains=search_query) |
             Q(place__icontains=search_query)
-        )
+        ).filter(date__gte=timezone.now()).order_by('date')
 
         if not matching_events:
             print(f"No events found matching the search query: {search_query}")
