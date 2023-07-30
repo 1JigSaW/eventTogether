@@ -6,6 +6,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
+from django.db import IntegrityError
 from django.db.models import Q, Count, F
 from django.http import Http404, JsonResponse
 from rest_framework.pagination import PageNumberPagination
@@ -33,9 +34,13 @@ class UserRegisterView(APIView):
     def post(self, request, format=None):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            try:
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            except IntegrityError:
+                return Response({"User with this username already exists."}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class UserAuthView(APIView):
@@ -48,7 +53,7 @@ class UserAuthView(APIView):
         if user is not None:
             return Response({'message': 'User authenticated', 'userId': user.id}, status=status.HTTP_200_OK)
         else:
-            return Response({'message': 'Check your password or email'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'message': 'User with this email and password does not exist'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class TenPerPagePagination(PageNumberPagination):

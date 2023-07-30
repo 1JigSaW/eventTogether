@@ -8,13 +8,31 @@ from app.models import Event, UserFavourite, Interest, Language, UserProfile, Me
 class UserSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         required=True,
-        validators=[UniqueValidator(queryset=User.objects.all(), message="This email is already in use.")]
+        validators=[UniqueValidator(queryset=User.objects.all(), message="This email is already in use.")],
+        error_messages={
+            'blank': 'Email is required.',
+            'invalid': 'Invalid email address.'
+        }
     )
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password')
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = '__all__'
+        extra_kwargs = {
+            'password': {
+                'write_only': True,
+                'error_messages': {
+                    'blank': 'Password is required.',
+                    'invalid': 'Invalid password.'
+                }
+            },
+            'username': {
+                'error_messages': {
+                    'blank': 'Username is required.',
+                    'invalid': 'Invalid username.'
+                }
+            }
+        }
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
