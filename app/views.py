@@ -17,7 +17,8 @@ from django.utils import timezone
 
 from .models import Event, UserFavourite, Interest, Language, UserProfile, Message, Chat
 from .serializers import UserSerializer, EventSerializer, UserFavouriteSerializer, InterestSerializer, \
-    LanguageSerializer, UserProfileSerializer, MessageSerializer, WriteMessageSerializer, ChatSerializer
+    LanguageSerializer, UserProfileSerializer, MessageSerializer, WriteMessageSerializer, ChatSerializer, \
+    CountrySerializer
 
 
 def authenticateAuth(request, email=None, password=None):
@@ -42,7 +43,6 @@ class UserRegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class UserAuthView(APIView):
     def post(self, request, format=None):
         email = request.data.get('email')
@@ -53,7 +53,8 @@ class UserAuthView(APIView):
         if user is not None:
             return Response({'message': 'User authenticated', 'userId': user.id}, status=status.HTTP_200_OK)
         else:
-            return Response({'message': 'User with this email and password does not exist'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'message': 'User with this email and password does not exist'},
+                            status=status.HTTP_401_UNAUTHORIZED)
 
 
 class TenPerPagePagination(PageNumberPagination):
@@ -344,7 +345,7 @@ class MatchUserView(APIView):
         )
 
         matched_users = matched_users.annotate(
-            total_matches= F('language_matches') + F('interest_matches')
+            total_matches=F('language_matches') + F('interest_matches')
         ).order_by('-total_matches')
 
         serializer = UserProfileSerializer(matched_users, many=True)
@@ -374,3 +375,9 @@ class UserProfilePictureUpdateView(APIView):
 
         return Response(status=status.HTTP_200_OK)
 
+
+class GetUniqueCountriesView(APIView):
+    def get(self, request, *args, **kwargs):
+        unique_countries = Event.objects.values('country').distinct()
+        serializer = CountrySerializer(unique_countries, many=True)
+        return Response(serializer.data)

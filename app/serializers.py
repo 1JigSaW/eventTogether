@@ -114,4 +114,5 @@ class WriteMessageSerializer(serializers.ModelSerializer):
         return message
 
 
-1
+class CountrySerializer(serializers.Serializer):
+    country = serializers.CharField()

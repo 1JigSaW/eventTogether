@@ -17,7 +17,8 @@ from django.urls import path
 from .views import UserRegisterView, UserAuthView, EventViewSet, GetUserFavouritesView, AddUserFavouriteView, \
     RemoveUserFavouriteView, GetEventView, InterestSearchView, LanguageSearchView, UserProfileUpdateView, \
     UserProfileDetailView, ChangePasswordView, AddUserToEventView, RemoveUserFromEventView, SearchEventView, \
-    UserChatsView, ChatMessagesView, CreateChatView, GetChatIDView, MatchUserView, UserProfilePictureUpdateView
+    UserChatsView, ChatMessagesView, CreateChatView, GetChatIDView, MatchUserView, UserProfilePictureUpdateView, \
+    GetUniqueCountriesView
 
 urlpatterns = [
     path('register/', UserRegisterView.as_view()),
@@ -43,6 +44,7 @@ urlpatterns = [
     path('get_chat_id/', GetChatIDView.as_view(), name='get_chat_id'),
     path('match-users/<int:user_id>/<int:event_id>/', MatchUserView.as_view(), name='match-user'),
     path('userprofile/<int:profile_id>/update_picture/', UserProfilePictureUpdateView.as_view(), name='update-picture'),
+    path('unique-countries/', GetUniqueCountriesView.as_view(), name='unique-countries'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:

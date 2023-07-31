@@ -55,6 +55,7 @@ class Event(models.Model):
     title = models.CharField(max_length=300)
     description = models.TextField(blank=True, null=True)
     date = models.DateTimeField()
+    country = models.CharField(max_length=500)
     city = models.CharField(max_length=300)
     place = models.TextField(blank=True, null=True)
     type = models.CharField(max_length=10, choices=EVENT_TYPES, default='EVENT')
