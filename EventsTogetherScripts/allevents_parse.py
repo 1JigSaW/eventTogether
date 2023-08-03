@@ -6,6 +6,9 @@ import re
 from datetime import datetime, timedelta
 import time
 from fake_useragent import UserAgent
+from datetime import datetime
+from dateutil import parser
+from selenium.webdriver.common.action_chains import ActionChains
 
 cloudinary.config(
 	cloud_name = 'dcrvubswi',
@@ -13,7 +16,6 @@ cloudinary.config(
 	api_secret = 'zKzEaR92OSUSDh5OtNdZPG4drns'
 )
 
-# Connect to the PostgreSQL database
 conn = psycopg2.connect(
 	host="127.0.0.1",
 	database="eventTogether",
@@ -32,54 +34,116 @@ from selenium.webdriver.chrome.options import Options
 
 ua = UserAgent()
 
-# Создаем опции Chrome и меняем user-agent
 opts = Options()
-opts.add_argument('user-agent=' + ua.random)  # ua.random генерирует случайный действительный user-agent
+opts.add_argument('user-agent=' + ua.random)
 
-# Передаем опции при инициализации WebDriver
 driver = webdriver.Chrome(options=opts)
+urls = [
+	'https://allevents.in/limassol/all', 
+	'https://allevents.in/nicosia/all',
+	'https://allevents.in/famagusta/all',
+	'https://allevents.in/strovolos/all',
+	'https://allevents.in/lakatamia/all',
+	'https://allevents.in/larnaca/all',
+	'https://allevents.in/pelentri/all',
+	'https://allevents.in/pissouri/all',
+	'https://allevents.in/kyrenia/all',
+	'https://allevents.in/aglantzia/all',
+	'https://allevents.in/germasogeia/all',
+	'https://allevents.in/paphos/all',
+]
 
-driver.get("https://allevents.in/nicosia/all?ref=cityhome")
+query_select = "SELECT 1 FROM app_event WHERE title = %s"
+query_insert = "INSERT INTO app_event (title, description, date, city, place, price_low, price_high, type, image, country) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
-while True:
-	time.sleep(5)
-	cards = driver.find_elements(By.CLASS_NAME, 'event-item')
-	for card in cards:
-		event_link = card.get_attribute("data-link")
-		
-		# Открываем новую вкладку с ивентом
-		driver.execute_script(f"window.open('{event_link}');")
-		driver.switch_to.window(driver.window_handles[1])
-		time.sleep(5)
-		
-		try:
-			title = driver.find_element(By.CLASS_NAME, 'overlay-h1').text
-			print(title)
-			description = driver.find_element(By.CLASS_NAME, 'event-description-html').text
-			image = driver.find_element(By.CLASS_NAME, 'event-banner-image').get_attribute('src')
-			print(image)
-			place = driver.find_element('xpath', '//*[@id="event-detail-fade"]/div[1]/div/div[2]/div/div[1]/div[2]/p[1]/span[2]/span')
-			print(place.getText())
-			datetime_all = driver.find_element('xpath','//*[@id="event-detail-fade"]/div[1]/div/div[2]/div/div[2]/p/span')
-			print(datetime_all.getText())
+with conn.cursor() as cur:
+	for link in urls:
+		for attempt in range(3):  # Пытаемся открыть страницу 3 раза
+			try:
+				driver.get(link)
+				break
+			except TimeoutException:
+				print("Timeout, retrying...")
+				if attempt == 2:  # Если это последняя попытка, то прерываем цикл
+					print("Failed to load page after 3 attempts, skipping...")
+					break
+		time.sleep(7)
+		cards = driver.find_elements(By.CLASS_NAME, 'event-item')
+		for card in cards:
+			event_link = card.get_attribute("data-link")
+			print(event_link)
 			
-			# Закрываем вкладку и переключаемся обратно
-			driver.close()
-			driver.switch_to.window(driver.window_handles[0])
-			break
-		except NoSuchElementException:
-			print("Could not find some elements, skipping event")
-			# Если что-то не нашлось, закрываем вкладку и переключаемся обратно
-			driver.close()
-			driver.switch_to.window(driver.window_handles[0])
+			driver.execute_script(f"window.open('{event_link}');")
+			driver.switch_to.window(driver.window_handles[1])
+			time.sleep(5)
+			
+			try:
+				title = driver.find_element(By.CLASS_NAME, 'overlay-h1').text
+				print('bd', title)
+				description = driver.find_element(By.CLASS_NAME, 'event-description-html').text
+				image = driver.find_element(By.CLASS_NAME, 'event-banner-image').get_attribute('src')
+				upload_result = cloudinary.uploader.upload(image, folder='events')
+				uploaded_image_url = upload_result.get('url')
+				print('bd', image)
+				num = 1
+				try:
+					datetime_all = driver.find_elements(By.CLASS_NAME, 'center')[num]
+					datetime_text = datetime_all.text.split("\n")[0]  # Используем только первую часть до переноса строки 
 
-	time.sleep(5)	
-	driver.execute_script("window.scrollTo(0, document.body.scrollHeight * 0.2);")
+					# Если есть " to ", то разделяем на две части, иначе начало и конец одинаковы
+					if " to " in datetime_text:
+						start_string, end_string = datetime_text.split(" to ", 1)
+					else:
+						start_string = end_string = datetime_text
 
-	time.sleep(20)  # Пауза для загрузки содержимого страницы
+					start_string = start_string.replace(" at ", " ")
+					start_datetime = parser.parse(start_string)
+					print('bd', start_datetime)
+				except ValueError:
+					num = 0
+					datetime_all = driver.find_elements(By.CLASS_NAME, 'center')[num]
+					datetime_text = datetime_all.text.split("\n")[0]  # Используем только первую часть до переноса строки 
 
-	# Нажимаем на "Show More"
-	show_more = driver.find_element_by_css_selector('.btn.load-more-btn')
-	show_more.click()
+					# Если есть " to ", то разделяем на две части, иначе начало и конец одинаковы
+					if " to " in datetime_text:
+						start_string, end_string = datetime_text.split(" to ", 1)
+					else:
+						start_string = end_string = datetime_text
 
+					start_string = start_string.replace(" at ", " ")
+					start_datetime = parser.parse(start_string)
+					print('bd', start_datetime)
+				place = driver.find_elements(By.CLASS_NAME,'center')[num + 1]
+				words = place.text.split(", ")
+				unique_words = list(dict.fromkeys(words))
+
+				if 'View on Map' in unique_words:
+					unique_words.remove('View on Map')
+
+				clean_place = ", ".join(unique_words)
+				clean_place = clean_place.split("\n")[0]
+				print('bd', clean_place)
+
+				driver.close()
+				driver.switch_to.window(driver.window_handles[0])
+			except NoSuchElementException:
+				print("Could not find some elements, skipping event")
+				driver.close()
+				driver.switch_to.window(driver.window_handles[0])
+
+			data = (title, description, start_datetime, clean_place, clean_place, None, None, 'EVENT', uploaded_image_url, 'Cyprus')
+				
+			cur.execute(query_select, (title,))
+			if cur.fetchone() is None:
+				cur.execute(query_insert, data)
+				conn.commit()
+
+
+		time.sleep(5) 
+
+		# # Нажимаем на "Show More"
+		# wait = WebDriverWait(driver, 10)
+		# show_more = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, 'btn-round')))
+		# show_more.click()
+conn.close()
 driver.quit()
