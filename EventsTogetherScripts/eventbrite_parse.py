@@ -16,11 +16,11 @@ cloudinary.config(
 
 # Connect to the PostgreSQL database
 conn = psycopg2.connect(
-   host="127.0.0.1",
-   database="eventTogether",
-   port=5432,
-   user="postgres",
-   password="Razer197"
+	host="app-46485cfb-bccf-4359-9457-549aae999134-do-user-10180596-0.b.db.ondigitalocean.com",
+	database="event",
+	port=25060,
+	user="event",
+	password="AVNS_5yw-aguZoxT8eqqhznY"
 )
 
 query_select = "SELECT 1 FROM app_event WHERE title = %s"

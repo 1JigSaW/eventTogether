@@ -1,14 +1,7 @@
-from bs4 import BeautifulSoup
-import requests
 import psycopg2
 import cloudinary.uploader
-import re
-from datetime import datetime, timedelta
 import time
-from fake_useragent import UserAgent
-from datetime import datetime
 from dateutil import parser
-from selenium.webdriver.common.action_chains import ActionChains
 
 cloudinary.config(
 	cloud_name = 'dcrvubswi',
@@ -17,25 +10,23 @@ cloudinary.config(
 )
 
 conn = psycopg2.connect(
-	host="127.0.0.1",
-	database="eventTogether",
-	port=5432,
-	user="postgres",
-	password="Razer197"
+	host="app-46485cfb-bccf-4359-9457-549aae999134-do-user-10180596-0.b.db.ondigitalocean.com",
+	database="event",
+	port=25060,
+	user="event",
+	password="AVNS_5yw-aguZoxT8eqqhznY"
 )
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-ua = UserAgent()
-
 opts = Options()
-opts.add_argument('user-agent=' + ua.random)
+# opts.add_argument('user-agent=' + ua.random)
 
 driver = webdriver.Chrome(options=opts)
 urls = [
