@@ -1,20 +1,32 @@
+import os
+
 import psycopg2
 import cloudinary.uploader
 import time
 from dateutil import parser
 
+CLOUD_NAME = os.environ.get('CLOUD_NAME')
+API_KEY = os.environ.get('API_KEY')
+API_SECRET = os.environ.get('API_SECRET')
+
 cloudinary.config(
-	cloud_name = 'dcrvubswi',
-	api_key = '296543555619657',
-	api_secret = 'zKzEaR92OSUSDh5OtNdZPG4drns'
+	cloud_name=CLOUD_NAME,
+	api_key=API_KEY,
+	api_secret=API_SECRET
 )
 
+DATABASE_DB = os.environ.get('DATABASE_DB')
+DATABASE_USER = os.environ.get('DATABASE_USER')
+DATABASE_PASSWORD = os.environ.get('DATABASE_PASSWORD')
+DATABASE_HOST = os.environ.get('DATABASE_HOST')
+DATABASE_PORT = os.environ.get('DATABASE_PORT')
+
 conn = psycopg2.connect(
-	host="app-46485cfb-bccf-4359-9457-549aae999134-do-user-10180596-0.b.db.ondigitalocean.com",
-	database="event",
-	port=25060,
-	user="event",
-	password="AVNS_5yw-aguZoxT8eqqhznY"
+	host=DATABASE_HOST,
+	database=DATABASE_DB,
+	port=DATABASE_PORT,
+	user=DATABASE_USER,
+	password=DATABASE_PASSWORD
 )
 
 from selenium import webdriver
